@@ -1,0 +1,13 @@
+[package]
+name = "sysY"
+version = "0.1.0"
+edition = "2021"
+
+
+[build-dependencies]
+lalrpop = { version = "0.22.0" }
+
+[dependencies]
+koopa = "0.0.8"
+# koopa = "0.0.8"
+lalrpop-util = { version = "0.22.0", features = ["lexer"] }
