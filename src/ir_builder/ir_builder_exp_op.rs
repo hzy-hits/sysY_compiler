@@ -10,7 +10,18 @@ impl IRBuilder {
         let real_op = match op {
             "add" => BinaryOp::Add,
             "sub" => BinaryOp::Sub,
+            "mul" => BinaryOp::Mul,
+            "div" => BinaryOp::Div,
+            "mod" => BinaryOp::Mod,
             "eq" => BinaryOp::Eq,
+            "lt" => BinaryOp::Lt,
+            "gt" => BinaryOp::Gt,
+            "le" => BinaryOp::Le,
+            "ge" => BinaryOp::Ge,
+            "ne" => BinaryOp::NotEq,
+            "or" => BinaryOp::Or,
+            "and" => BinaryOp::And,
+
             _ => panic!("Unknown binary operator: {}", op),
         };
         let value = self

@@ -9,5 +9,5 @@ pub use block::Block;
 pub use comp_unit::CompUnit;
 pub use exp::{Exp, PrimaryExp, UnaryExp};
 pub use func_def::{FuncDef, FuncType};
-pub use op::UnaryOp;
+pub use op::{Op, UnaryOp};
 pub use stmt::Stmt;

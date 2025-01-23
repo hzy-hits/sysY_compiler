@@ -90,6 +90,7 @@ impl AsmGenerator {
         let rhs_reg = self.get_or_generate_value_reg(func, rhs);
 
         let dst_reg = if self.can_reuse_register(lhs) {
+            self.reg_manager.value_reg_map.remove(&lhs);
             lhs_reg.clone()
         } else {
             self.reg_manager.allocate_tmp().unwrap()
@@ -108,7 +109,6 @@ impl AsmGenerator {
     }
 
     pub fn init_function(&mut self, func: &FunctionData) {
-
         self.reg_manager.value_reg_map.clear();
         self.reg_manager.value_use_count.clear();
         self.reg_manager.stack_slots.clear();

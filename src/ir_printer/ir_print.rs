@@ -83,6 +83,19 @@ impl IRPrinter {
                 let op: &str = match bin.op() {
                     koopa::ir::BinaryOp::Sub => "sub",
                     koopa::ir::BinaryOp::Eq => "eq",
+                    koopa::ir::BinaryOp::Add => "add",
+                    koopa::ir::BinaryOp::Mul => "mul",
+                    koopa::ir::BinaryOp::Div => "div",
+                    koopa::ir::BinaryOp::Mod => "mod",
+                    koopa::ir::BinaryOp::And => "and",
+                    koopa::ir::BinaryOp::Or => "or",
+                    koopa::ir::BinaryOp::Lt => "lt",
+                    koopa::ir::BinaryOp::Gt => "gt",
+                    koopa::ir::BinaryOp::Le => "le",
+                    koopa::ir::BinaryOp::Ge => "ge",
+                    koopa::ir::BinaryOp::NotEq => "ne",
+                    
+                    
                     _ => unreachable!(),
                 };
                 let value = self.value_to_string(func, value);

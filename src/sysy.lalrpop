@@ -1,6 +1,6 @@
 // lalrpop 里的约定
 grammar;
-use sysY::ast::{CompUnit, FuncDef, FuncType, Block, Stmt, Exp, UnaryExp, UnaryOp, PrimaryExp};
+use sysY::ast::{CompUnit, FuncDef, FuncType, Block, Stmt, Exp, UnaryExp, UnaryOp,Op, PrimaryExp};
 
 
 // 约束 lexer 的行为
@@ -52,13 +52,47 @@ IntConst: i32 = {
 }
 
 
-pub Exp:Exp={
-   <ue:UnaryExp> => Exp::UnaryExp(Box::new(ue)),
+pub Exp: Exp = {
+    LOrExp => <>,
+};
+
+
+// LOrExp      ::= LAndExp | LOrExp "||" LAndExp;
+pub LOrExp:Exp={
+    LandExp=><>,
+    <lhs:LOrExp> "||" <rhs:LandExp> => Exp::Binary(Box::new(lhs), Op::Or, Box::new(rhs)),
 }
 
-pub PrimaryExp: PrimaryExp = {
-    Number => PrimaryExp::Number(<>),
-    "(" <e:Exp> ")" => PrimaryExp::Exp(Box::new(e)), 
+pub LandExp:Exp={
+    EqExp=><>,
+    <lhs:LandExp> "&&" <rhs:EqExp> => Exp::Binary(Box::new(lhs), Op::And, Box::new(rhs)),
+}
+
+pub EqExp:Exp={
+    RelExp=><>,
+    <lhs:EqExp> "==" <rhs:RelExp> => Exp::Binary(Box::new(lhs), Op::Eq, Box::new(rhs)),
+    <lhs:EqExp> "!=" <rhs:RelExp> => Exp::Binary(Box::new(lhs), Op::Ne, Box::new(rhs)),
+}
+
+pub RelExp:Exp={
+    AddExp=><>,
+    <lhs:RelExp> "<" <rhs:AddExp> => Exp::Binary(Box::new(lhs), Op::Lt, Box::new(rhs)),
+    <lhs:RelExp> ">" <rhs:AddExp> => Exp::Binary(Box::new(lhs), Op::Gt, Box::new(rhs)),
+    <lhs:RelExp> "<=" <rhs:AddExp> => Exp::Binary(Box::new(lhs), Op::Le, Box::new(rhs)),
+    <lhs:RelExp> ">=" <rhs:AddExp> => Exp::Binary(Box::new(lhs), Op::Ge, Box::new(rhs)),
+}
+
+pub AddExp: Exp = {
+    MulExp => <>,
+    <lhs:AddExp> "+" <rhs:MulExp> => Exp::Binary(Box::new(lhs), Op::Add, Box::new(rhs)),
+    <lhs:AddExp> "-" <rhs:MulExp> => Exp::Binary(Box::new(lhs), Op::Sub, Box::new(rhs)),
+};
+
+pub MulExp: Exp = {
+    UnaryExp => Exp::UnaryExp(Box::new(<>)),
+    <lhs:MulExp> "*" <rhs:UnaryExp> => Exp::Binary(Box::new(lhs), Op::Mul, Box::new(Exp::UnaryExp(Box::new(rhs)))),
+    <lhs:MulExp> "/" <rhs:UnaryExp> => Exp::Binary(Box::new(lhs), Op::Div, Box::new(Exp::UnaryExp(Box::new(rhs)))),
+    <lhs:MulExp> "%" <rhs:UnaryExp> => Exp::Binary(Box::new(lhs), Op::Mod, Box::new(Exp::UnaryExp(Box::new(rhs)))),
 };
 
 pub UnaryExp: UnaryExp = {
@@ -71,3 +105,13 @@ pub UnaryOp:UnaryOp={
     "-"=>UnaryOp::Minus,
     "!"=>UnaryOp::Not,
 }
+
+pub PrimaryExp: PrimaryExp = {
+    Number => PrimaryExp::Number(<>),
+    "(" <e:Exp> ")" => PrimaryExp::Exp(Box::new(e)), 
+};
+
+
+
+
+
