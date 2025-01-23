@@ -2,7 +2,6 @@ mod gen_instruct;
 mod instruct_generator;
 mod register_manager;
 mod riscv_asm_generator;
-
 use instruct_generator::RiscvInstructionGenerator;
 use register_manager::RiscvRegisterManager;
 
