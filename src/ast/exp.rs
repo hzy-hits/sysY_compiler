@@ -29,8 +29,16 @@ impl ExpToIr for Exp {
                     Op::Le => Ok(builder.create_binary("le", lhs_val, rhs_val)),
                     Op::Ge => Ok(builder.create_binary("ge", lhs_val, rhs_val)),
                     Op::Ne => Ok(builder.create_binary("ne", lhs_val, rhs_val)),
-                    Op::And => Ok(builder.create_binary("and", lhs_val, rhs_val)),
-                    Op::Or => Ok(builder.create_binary("or", lhs_val, rhs_val)),
+                    Op::And => {
+                        let logic_lhs_val = builder.to_logic_val(lhs_val);
+                        let logic_rhs_val = builder.to_logic_val(rhs_val);
+                        Ok(builder.create_binary("and", logic_lhs_val, logic_rhs_val))
+                    }
+                    Op::Or => {
+                        let logic_lhs_val = builder.to_logic_val(lhs_val);
+                        let logic_rhs_val = builder.to_logic_val(rhs_val);
+                        Ok(builder.create_binary("or", logic_lhs_val, logic_rhs_val))
+                    }
                 }
             }
         }

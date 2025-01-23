@@ -44,4 +44,10 @@ impl IRBuilder {
 
         value
     }
+
+    pub(crate) fn to_logic_val(&mut self, val: Value) -> Value {
+        let zero = self.create_constant(0);
+        let inner = self.create_binary("eq", zero, val);
+        self.create_binary("eq", zero, inner)
+    }
 }

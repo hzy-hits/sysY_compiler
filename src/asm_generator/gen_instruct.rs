@@ -89,7 +89,7 @@ impl AsmGenerator {
         let lhs_reg = self.get_or_generate_value_reg(func, lhs);
         let rhs_reg = self.get_or_generate_value_reg(func, rhs);
 
-        let dst_reg = if self.can_reuse_register(lhs) {
+        let dst_reg = if self.can_reuse_register(lhs) && lhs_reg != "x0" {
             self.reg_manager.value_reg_map.remove(&lhs);
             lhs_reg.clone()
         } else {

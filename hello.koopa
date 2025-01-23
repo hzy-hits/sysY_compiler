@@ -1,9 +1,15 @@
-.text
-.global main
-main:
-  li t0, 1
-  li t1, 2
-  slt t0, t1, t0
-  seqz t0, t0
-  mv a0, t0
-  ret
+fun @main (): i32 {
+  %entry:
+    %0 = eq 0, 1
+    %1 = eq 0, %0
+    %2 = eq 0, 0
+    %3 = eq 0, %2
+    %4 = or %1, %3
+    %5 = eq 0, %4
+    %6 = eq 0, %5
+    %7 = eq 0, 2
+    %8 = eq 0, %7
+    %9 = and %6, %8
+    ret %9
+}
+

@@ -29,7 +29,7 @@ fn main() -> Result<()> {
 
     ast.to_ir(&mut builder).unwrap();
     match mode.as_str() {
-        "-ir" => {
+        "-koopa" => {
             let mut printer = ir_printer::IRPrinter::new();
             let ir = builder.to_ir(&mut printer);
             write(&output, ir)?;
