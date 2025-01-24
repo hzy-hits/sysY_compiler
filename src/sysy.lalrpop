@@ -1,6 +1,8 @@
+#[LALR]
 // lalrpop 里的约定
 grammar;
-use sysY::ast::{CompUnit, FuncDef, FuncType, Block, Stmt, Exp, UnaryExp, UnaryOp,Op, PrimaryExp};
+use sysY::ast::*;
+use koopa::ir::BinaryOp;
 
 
 // 约束 lexer 的行为
@@ -12,10 +14,65 @@ match {
   // 剩下的情况采用默认方式处理
   _
 }
-
 pub CompUnit: CompUnit = {
-    <func_def: FuncDef> => CompUnit { func_def },
+    <f: FuncDef> => CompUnit { items: vec![CompUnitItem::FuncDef(f)] },
 };
+
+// pub CompUnitItems: Vec<CompUnitItem> = {
+//     => vec![], 
+//     <mut items: CompUnitItems> <item: CompUnitItem> => {
+//         items.push(item);
+//         items
+//     },
+// };
+
+// pub CompUnitItem: CompUnitItem = {
+//     <d: Decl> => CompUnitItem::Decl(d),
+//     <f: FuncDef> => CompUnitItem::FuncDef(f),
+// };
+
+pub Decl:Decl={
+    <const_decl: ConstDecl> => Decl::ConstDecl(const_decl.0, const_decl.1),
+    <var_decl: VarDecl> => Decl::VarDecl(var_decl.0, var_decl.1),
+}
+
+
+pub ConstDecl: (BType, Vec<ConstDef>) = {
+    "const" <btype: BType> <first: ConstDef> <rest: ("," <ConstDef>)*> ";" => {
+        let mut defs = vec![first];
+        defs.extend(rest);
+        (btype, defs)
+    }
+};
+
+
+
+pub VarDecl: (BType, Vec<VarDef>) = {
+    <btype: BType> <first: VarDef> <rest: ("," <VarDef>)*> ";" => {
+        let mut defs = vec![first];
+        defs.extend(rest);
+        (btype, defs)
+    }
+};
+
+
+pub ConstDef: ConstDef = {
+    <id: Ident> "=" <value: ConstInitVal> => ConstDef { id, value },
+};
+
+pub ConstInitVal: ConstInitVal = {
+    <exp: ConstExp> => ConstInitVal { exp: Box::new(exp) },
+};
+
+pub VarDef: VarDef = {
+    <id: Ident> => VarDef { id, init_val: None },
+    <id: Ident> "=" <init_val: InitVal> => VarDef { id, init_val: Some(init_val) },
+};
+
+pub InitVal: InitVal = {
+    <exp: Exp> => InitVal { exp: Box::new(exp) },
+};
+
 
 pub FuncDef: FuncDef = {
     <func_type: FuncType> <id: Ident> "(" ")" <block: Block> => FuncDef {
@@ -28,13 +85,31 @@ pub FuncDef: FuncDef = {
 pub FuncType: FuncType = "int" => FuncType::Int;
 
 pub Block: Block = {
-    "{" <stmt: Stmt> "}" => Block { stmt },
+    "{" <items: BlockItem*> "}" => Block { items },
 };
 
+
+
+pub BlockItem:BlockItem={
+    <decl: Decl>=> BlockItem::Decl(decl),
+    <stmt: Stmt>=> BlockItem::Stmt(stmt),
+}
+
+pub BType: BType ={
+    "int"=>BType::Int,
+}
 
 pub Stmt: Stmt = {
     "return" <exp: Exp> ";" => Stmt::Return(exp),
+    "return" <exp: Exp> => Stmt::Return(exp),  
+    <lval:LVal> "=" <exp: Exp> ";" => Stmt::Assign(lval, exp),
+    <lval:LVal> "=" <exp: Exp> => Stmt::Assign(lval, exp),  
 };
+
+pub LVal: LVal ={
+    <id: Ident> => LVal { id },
+    
+}
 pub Number: i32 = {
     <num: IntConst> => num,
 };
@@ -60,39 +135,51 @@ pub Exp: Exp = {
 // LOrExp      ::= LAndExp | LOrExp "||" LAndExp;
 pub LOrExp:Exp={
     LandExp=><>,
-    <lhs:LOrExp> "||" <rhs:LandExp> => Exp::Binary(Box::new(lhs), Op::Or, Box::new(rhs)),
+    <lhs:LOrExp> "||" <rhs:LandExp> => Exp::Binary(Box::new(lhs), BinaryOp::Or, Box::new(rhs)),
 }
 
 pub LandExp:Exp={
     EqExp=><>,
-    <lhs:LandExp> "&&" <rhs:EqExp> => Exp::Binary(Box::new(lhs), Op::And, Box::new(rhs)),
+    <lhs:LandExp> "&&" <rhs:EqExp> => Exp::Binary(Box::new(lhs), BinaryOp::And, Box::new(rhs)),
 }
 
 pub EqExp:Exp={
     RelExp=><>,
-    <lhs:EqExp> "==" <rhs:RelExp> => Exp::Binary(Box::new(lhs), Op::Eq, Box::new(rhs)),
-    <lhs:EqExp> "!=" <rhs:RelExp> => Exp::Binary(Box::new(lhs), Op::Ne, Box::new(rhs)),
+    <lhs:EqExp> "==" <rhs:RelExp> => Exp::Binary(Box::new(lhs), BinaryOp::Eq, Box::new(rhs)),
+    <lhs:EqExp> "!=" <rhs:RelExp> => Exp::Binary(Box::new(lhs), BinaryOp::NotEq, Box::new(rhs)),
 }
 
 pub RelExp:Exp={
     AddExp=><>,
-    <lhs:RelExp> "<" <rhs:AddExp> => Exp::Binary(Box::new(lhs), Op::Lt, Box::new(rhs)),
-    <lhs:RelExp> ">" <rhs:AddExp> => Exp::Binary(Box::new(lhs), Op::Gt, Box::new(rhs)),
-    <lhs:RelExp> "<=" <rhs:AddExp> => Exp::Binary(Box::new(lhs), Op::Le, Box::new(rhs)),
-    <lhs:RelExp> ">=" <rhs:AddExp> => Exp::Binary(Box::new(lhs), Op::Ge, Box::new(rhs)),
+    <lhs:RelExp> "<" <rhs:AddExp> => Exp::Binary(Box::new(lhs), BinaryOp::Lt, Box::new(rhs)),
+    <lhs:RelExp> ">" <rhs:AddExp> => Exp::Binary(Box::new(lhs), BinaryOp::Gt, Box::new(rhs)),
+    <lhs:RelExp> "<=" <rhs:AddExp> => Exp::Binary(Box::new(lhs), BinaryOp::Le, Box::new(rhs)),
+    <lhs:RelExp> ">=" <rhs:AddExp> => Exp::Binary(Box::new(lhs), BinaryOp::Ge, Box::new(rhs)),
 }
 
 pub AddExp: Exp = {
     MulExp => <>,
-    <lhs:AddExp> "+" <rhs:MulExp> => Exp::Binary(Box::new(lhs), Op::Add, Box::new(rhs)),
-    <lhs:AddExp> "-" <rhs:MulExp> => Exp::Binary(Box::new(lhs), Op::Sub, Box::new(rhs)),
+    <lhs:AddExp> "+" <rhs:MulExp> => Exp::Binary(Box::new(lhs), BinaryOp::Add, Box::new(rhs)),
+    <lhs:AddExp> "-" <rhs:MulExp> => Exp::Binary(Box::new(lhs), BinaryOp::Sub, Box::new(rhs)),
 };
 
 pub MulExp: Exp = {
     UnaryExp => Exp::UnaryExp(Box::new(<>)),
-    <lhs:MulExp> "*" <rhs:UnaryExp> => Exp::Binary(Box::new(lhs), Op::Mul, Box::new(Exp::UnaryExp(Box::new(rhs)))),
-    <lhs:MulExp> "/" <rhs:UnaryExp> => Exp::Binary(Box::new(lhs), Op::Div, Box::new(Exp::UnaryExp(Box::new(rhs)))),
-    <lhs:MulExp> "%" <rhs:UnaryExp> => Exp::Binary(Box::new(lhs), Op::Mod, Box::new(Exp::UnaryExp(Box::new(rhs)))),
+    <lhs:MulExp> "*" <rhs:UnaryExp> => Exp::Binary(
+        Box::new(lhs), 
+        BinaryOp::Mul, 
+        Box::new(Exp::UnaryExp(Box::new(rhs)))
+    ),
+    <lhs:MulExp> "/" <rhs:UnaryExp> => Exp::Binary(
+        Box::new(lhs), 
+        BinaryOp::Div, 
+        Box::new(Exp::UnaryExp(Box::new(rhs)))
+    ),
+    <lhs:MulExp> "%" <rhs:UnaryExp> => Exp::Binary(
+        Box::new(lhs), 
+        BinaryOp::Mod, 
+        Box::new(Exp::UnaryExp(Box::new(rhs)))
+    ),
 };
 
 pub UnaryExp: UnaryExp = {
@@ -108,7 +195,11 @@ pub UnaryOp:UnaryOp={
 
 pub PrimaryExp: PrimaryExp = {
     Number => PrimaryExp::Number(<>),
+    LVal => PrimaryExp::LVal(<>),
     "(" <e:Exp> ")" => PrimaryExp::Exp(Box::new(e)), 
+};
+pub ConstExp: Exp = {
+    Exp => <>,
 };
 
 

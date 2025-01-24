@@ -1,4 +1,4 @@
-int main()
-{
-    return (1 || 0) && 2;
+int main() {
+  const int x = 1 + 1;
+  return x;
 }

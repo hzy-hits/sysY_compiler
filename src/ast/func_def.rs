@@ -4,12 +4,7 @@ use koopa::ir::Type;
 
 use crate::{ast::Block, ir_builder::IRBuilder, traits::ToIr};
 
-#[derive(Debug)]
-pub struct FuncDef {
-    pub func_type: FuncType,
-    pub id: String,
-    pub block: Block,
-}
+use super::refactor::{FuncDef, FuncType};
 
 impl ToIr for FuncDef {
     fn to_ir(&self, builder: &mut IRBuilder) -> Result<(), String> {
@@ -21,11 +16,6 @@ impl ToIr for FuncDef {
         self.block.to_ir(builder)?;
         Ok(())
     }
-}
-
-#[derive(Debug)]
-pub enum FuncType {
-    Int,
 }
 
 impl FuncType {

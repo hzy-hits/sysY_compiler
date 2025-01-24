@@ -3,12 +3,7 @@ use crate::{
     traits::{to_ir::ExpToIr, ToIr},
 };
 
-use super::Exp;
-
-#[derive(Debug)]
-pub enum Stmt {
-    Return(Exp),
-}
+use super::refactor::Stmt;
 
 impl ToIr for Stmt {
     fn to_ir(&self, builder: &mut IRBuilder) -> Result<(), String> {
@@ -17,6 +12,7 @@ impl ToIr for Stmt {
                 let val = exp.to_ir(builder)?;
                 builder.create_ret(Some(val));
             }
+            Stmt::Assign(_, _) => unimplemented!(),
         }
 
         Ok(())
