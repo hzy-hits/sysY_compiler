@@ -1,10 +1,14 @@
+use std::collections::HashMap;
+
 use koopa::ir::{
     builder::{BasicBlockBuilder, LocalInstBuilder, ValueBuilder},
     BasicBlock, Function, FunctionData, Type, Value,
 };
 
-use super::IRBuilder;
+use crate::{semantic::SymbolKind, traits::semantic::SymbolTable};
 
+use super::IRBuilder;
+use super::Result;
 impl IRBuilder {
     pub fn create_function(
         &mut self,
@@ -20,7 +24,7 @@ impl IRBuilder {
         self.set_current_func(func);
         func
     }
-    pub fn create_bb(&mut self, name: &str) -> Result<BasicBlock, String> {
+    pub fn create_bb(&mut self, name: &str) -> Result<BasicBlock> {
         let func = self.current_func.expect("No active function");
         let bb = self
             .program
@@ -33,7 +37,8 @@ impl IRBuilder {
             .layout_mut()
             .bbs_mut()
             .push_key_back(bb)
-            .map_err(|_| "Failed to create basic block".to_string())?;
+            .map_err(|_| anyhow::anyhow!("Failed to create basic block"))?;
+
         self.set_current_bb(bb);
         Ok(bb)
     }
@@ -63,5 +68,55 @@ impl IRBuilder {
             .dfg_mut()
             .new_value()
             .integer(value)
+    }
+
+    pub fn value_type(&self, val: Value) -> Result<Type> {
+        let func = self.current_func.expect("No active function");
+        let ty = self.program.func(func).dfg().value(val).ty().clone();
+        Ok(ty)
+    }
+}
+
+impl SymbolTable for IRBuilder {
+    fn enter_scope(&mut self) -> Result<()> {
+        self.symbo_spaces.push(HashMap::new());
+        self.current_scope_level += 1;
+        Ok(())
+    }
+
+    fn exit_scope(&mut self) -> Result<()> {
+        self.symbo_spaces
+            .pop()
+            .ok_or_else(|| anyhow::anyhow!("No scope to exit"))?;
+        self.current_scope_level -= 1;
+
+        Ok(())
+    }
+
+    fn lookup(&self, name: &str) -> Result<&SymbolKind> {
+        for scope in self.symbo_spaces.iter().rev() {
+            if let Some(sym) = scope.get(name) {
+                return Ok(sym);
+            }
+        }
+        Err(anyhow::anyhow!("Symbol {} not found", name))
+    }
+
+    fn add_symbol(&mut self, name: &str, kind: SymbolKind) -> Result<()> {
+        let scope = self.symbo_spaces.last_mut().ok_or_else(|| {
+            anyhow::anyhow!(
+                "
+No active scope"
+            )
+        })?;
+        if scope.contains_key(name) {
+            return Err(anyhow::anyhow!("Symbol {} already exists", name));
+        }
+        scope.insert(name.to_string(), kind);
+        Ok(())
+    }
+
+    fn current_scope_level(&self) -> usize {
+        self.current_scope_level
     }
 }

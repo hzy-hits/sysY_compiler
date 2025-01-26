@@ -1,8 +1,9 @@
+use anyhow::Context;
+use anyhow::Result;
 use lalrpop_util::lalrpop_mod;
 use std::env::args;
 use std::fs::read_to_string;
 use std::fs::write;
-use std::io::Result;
 use sysY::asm_generator;
 use sysY::traits::ToIr;
 use sysY::{ir_builder, ir_printer};
@@ -22,12 +23,14 @@ fn main() -> Result<()> {
 
     // 读取输入文件
     let input = read_to_string(input)?;
-
+    let static_input = Box::leak(input.into_boxed_str());
     // 调用 lalrpop 生成的 parser 解析输入文件
-    let ast = sysy::CompUnitParser::new().parse(&input).unwrap();
+    let ast = sysy::CompUnitParser::new()
+        .parse(static_input)
+        .with_context(|| format!("Failed to parse input file"))?;
     let mut builder = ir_builder::IRBuilder::new();
 
-    ast.to_ir(&mut builder).unwrap();
+    ast.to_ir(&mut builder).context("Failed to build IR")?;
     match mode.as_str() {
         "-koopa" => {
             let mut printer = ir_printer::IRPrinter::new();

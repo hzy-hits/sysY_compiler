@@ -47,13 +47,6 @@ pub ConstDecl: (BType, Vec<ConstDef>) = {
 
 
 
-pub VarDecl: (BType, Vec<VarDef>) = {
-    <btype: BType> <first: VarDef> <rest: ("," <VarDef>)*> ";" => {
-        let mut defs = vec![first];
-        defs.extend(rest);
-        (btype, defs)
-    }
-};
 
 
 pub ConstDef: ConstDef = {
@@ -64,9 +57,36 @@ pub ConstInitVal: ConstInitVal = {
     <exp: ConstExp> => ConstInitVal { exp: Box::new(exp) },
 };
 
+pub VarDecl: (BType, Vec<VarDef>) = {
+    <btype: BType> <defs: VarDefs> ";" => {
+        let defs = defs.into_iter()
+            .map(|mut def| {
+                def.ty = btype.clone();  
+                def
+            })
+            .collect();
+        (btype, defs)
+    }
+};
+
+pub VarDefs: Vec<VarDef> = {
+    <first: VarDef> <rest: ("," <VarDef>)*> => {
+        let mut defs = vec![first];
+        defs.extend(rest);  
+        defs
+    }
+};
 pub VarDef: VarDef = {
-    <id: Ident> => VarDef { id, init_val: None },
-    <id: Ident> "=" <init_val: InitVal> => VarDef { id, init_val: Some(init_val) },
+    <id: Ident> => VarDef { 
+        id, 
+        ty: BType::Int,  
+        init_val: None 
+    },
+    <id: Ident> "=" <init_val: InitVal> => VarDef { 
+        id,
+        ty: BType::Int,  
+        init_val: Some(init_val) 
+    },
 };
 
 pub InitVal: InitVal = {

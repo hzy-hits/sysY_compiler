@@ -8,5 +8,6 @@ pub mod refactor;
 pub mod stmt;
 // 导出模块内容供外部使用
 
+pub use anyhow::Result;
 pub use op::{Op, UnaryOp};
 pub use refactor::*;

@@ -4,14 +4,15 @@ mod ir_builder_impl;
 use koopa::ir::*;
 use std::collections::HashMap;
 
-use crate::{asm_generator::AsmGenerator, ir_printer::IRPrinter};
-
+use super::Result;
+use crate::{asm_generator::AsmGenerator, ir_printer::IRPrinter, semantic::SymbolKind};
 pub struct IRBuilder {
     program: Program,
     current_func: Option<Function>,
     current_block: Option<BasicBlock>,
-    symbol_table: HashMap<String, Value>,
     value_counter: usize,
+    symbo_spaces: Vec<HashMap<String, SymbolKind>>,
+    current_scope_level: usize,
 }
 // IRBuilder getter and new methods
 impl IRBuilder {
@@ -20,8 +21,9 @@ impl IRBuilder {
             program: Program::new(),
             current_func: None,
             current_block: None,
-            symbol_table: HashMap::new(),
             value_counter: 0,
+            symbo_spaces: vec![HashMap::new()],
+            current_scope_level: 0,
         }
     }
     fn next_value_id(&mut self) -> usize {
@@ -42,9 +44,6 @@ impl IRBuilder {
 
     pub fn set_current_bb(&mut self, bb: BasicBlock) {
         self.current_block = Some(bb);
-    }
-    pub fn add_symbol(&mut self, name: String, value: Value) {
-        self.symbol_table.insert(name, value);
     }
 
     pub fn create_int_type(&self) -> Type {

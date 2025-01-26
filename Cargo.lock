@@ -12,6 +12,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "anyhow"
+version = "1.0.95"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "34ac096ce696dc2fcabef30516bb13c0a68a11d30131d3df6f04711467681b04"
+
+[[package]]
 name = "ascii-canvas"
 version = "4.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -427,6 +433,7 @@ dependencies = [
 name = "sysY"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "koopa",
  "lalrpop",
  "lalrpop-util",

@@ -2,12 +2,12 @@ use std::vec;
 
 use koopa::ir::Type;
 
+use super::refactor::{FuncDef, FuncType};
+use super::Result;
 use crate::{ast::Block, ir_builder::IRBuilder, traits::ToIr};
 
-use super::refactor::{FuncDef, FuncType};
-
 impl ToIr for FuncDef {
-    fn to_ir(&self, builder: &mut IRBuilder) -> Result<(), String> {
+    fn to_ir(&self, builder: &mut IRBuilder) -> Result<()> {
         let name = format!("@{}", &self.id);
         builder.create_function(&name, vec![], self.func_type.to_koop());
         let entry = builder.create_bb("%entry")?;

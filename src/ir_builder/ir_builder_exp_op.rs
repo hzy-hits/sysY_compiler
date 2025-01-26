@@ -1,54 +1,71 @@
+use anyhow::ensure;
 use koopa::ir::{builder::LocalInstBuilder, BinaryOp, Value};
+use koopa::ir::{BasicBlock, Function, Type};
 
 use super::IRBuilder;
-
+use super::Result;
 impl IRBuilder {
-    pub fn create_binary(&mut self, op: &BinaryOp, lhs: Value, rhs: Value) -> Value {
-        let func = self.current_func.expect("No active function");
-        let bb = self.current_block.expect("No active basic block");
-        let id = self.next_value_id();
-        // let real_op = match op {
-        //     "add" => BinaryOp::Add,
-        //     "sub" => BinaryOp::Sub,
-        //     "mul" => BinaryOp::Mul,
-        //     "div" => BinaryOp::Div,
-        //     "mod" => BinaryOp::Mod,
-        //     "eq" => BinaryOp::Eq,
-        //     "lt" => BinaryOp::Lt,
-        //     "gt" => BinaryOp::Gt,
-        //     "le" => BinaryOp::Le,
-        //     "ge" => BinaryOp::Ge,
-        //     "ne" => BinaryOp::NotEq,
-        //     "or" => BinaryOp::Or,
-        //     "and" => BinaryOp::And,
+    fn get_current_context(&self) -> Result<(Function, BasicBlock)> {
+        let func = self
+            .current_func
+            .ok_or_else(|| anyhow::anyhow!("No active function"))?;
+        let bb = self
+            .current_block
+            .ok_or_else(|| anyhow::anyhow!("No active basic block"))?;
+        Ok((func, bb))
+    }
+    fn create_instruction<F>(&mut self, create_value: F) -> Result<Value>
+    where
+        F: FnOnce(&mut koopa::ir::dfg::DataFlowGraph) -> Value,
+    {
+        let (func, bb) = self.get_current_context()?;
 
-        //     _ => panic!("Unknown binary operator: {}", op),
-        // };
-        let real_op = *op;
-        let value = self
-            .program
-            .func_mut(func)
-            .dfg_mut()
-            .new_value()
-            .binary(real_op, lhs, rhs);
+        let value = create_value(self.program.func_mut(func).dfg_mut());
+        let id = self.next_value_id();
         self.program
             .func_mut(func)
             .dfg_mut()
             .set_value_name(value, Some(format!("%{}", id)));
+
         self.program
             .func_mut(func)
             .layout_mut()
             .bb_mut(bb)
             .insts_mut()
             .push_key_back(value)
-            .unwrap();
+            .map_err(|_| anyhow::anyhow!("Failed to insert instruction"))?;
 
-        value
+        Ok(value)
     }
 
-    pub(crate) fn to_logic_val(&mut self, val: Value) -> Value {
+    pub fn create_binary(&mut self, op: &BinaryOp, lhs: Value, rhs: Value) -> Result<Value> {
+        let (func, _) = self.get_current_context()?;
+
+        let lhs_ty = self.program.func(func).dfg().value(lhs).ty();
+        let rhs_ty = self.program.func(func).dfg().value(rhs).ty();
+        ensure!(
+            lhs_ty == rhs_ty,
+            "Type mismatch in binary op: {:?} vs {:?}",
+            lhs_ty,
+            rhs_ty
+        );
+
+        let real_op = *op;
+        Ok(self.create_instruction(|dfg| dfg.new_value().binary(real_op, lhs, rhs))?)
+    }
+
+    pub(crate) fn to_logic_val(&mut self, val: Value) -> Result<Value> {
         let zero = self.create_constant(0);
-        let inner = self.create_binary(&BinaryOp::Eq, zero, val);
+        let inner = self.create_binary(&BinaryOp::Eq, zero, val)?;
         self.create_binary(&BinaryOp::Eq, zero, inner)
+    }
+
+    pub fn create_alloc(&mut self, ty: Type) -> Result<Value> {
+        self.create_instruction(|dfg| dfg.new_value().alloc(ty))
+    }
+
+    pub fn create_store(&mut self, ptr: Value, value: Value) -> Result<()> {
+        self.create_instruction(|dfg| dfg.new_value().store(ptr, value))?;
+        Ok(())
     }
 }

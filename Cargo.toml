@@ -8,6 +8,7 @@ edition = "2021"
 lalrpop = { version = "0.22.0" }
 
 [dependencies]
+anyhow = "1.0.95"
 koopa = "0.0.8"
 # koopa = "0.0.8"
 lalrpop-util = { version = "0.22.0", features = ["lexer"] }

@@ -37,7 +37,7 @@ pub enum Decl {
     VarDecl(BType, Vec<VarDef>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum BType {
     Int,
 }
@@ -56,6 +56,7 @@ pub struct ConstInitVal {
 #[derive(Debug)]
 pub struct VarDef {
     pub id: String,
+    pub ty: BType,
     pub init_val: Option<InitVal>,
 }
 
@@ -73,6 +74,18 @@ pub enum Stmt {
 #[derive(Debug, Clone)]
 pub struct LVal {
     pub id: String,
+}
+
+impl LVal {
+    pub fn new(id: String) -> Self {
+        Self { id }
+    }
+    pub fn to_ir(&self) -> String {
+        self.id.clone()
+    }
+    pub fn to_asm(&self) -> String {
+        self.id.clone()
+    }
 }
 
 #[derive(Debug, Clone)]
