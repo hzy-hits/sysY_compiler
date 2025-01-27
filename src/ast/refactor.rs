@@ -76,18 +76,6 @@ pub struct LVal {
     pub id: String,
 }
 
-impl LVal {
-    pub fn new(id: String) -> Self {
-        Self { id }
-    }
-    pub fn to_ir(&self) -> String {
-        self.id.clone()
-    }
-    pub fn to_asm(&self) -> String {
-        self.id.clone()
-    }
-}
-
 #[derive(Debug, Clone)]
 pub enum Exp {
     Primary(PrimaryExp),

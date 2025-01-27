@@ -58,6 +58,18 @@ impl RiscvRegisterManager {
             .get(val)
             .map_or(true, |&count| count == 0)
     }
+    pub fn reset_registers(&mut self) {
+        self.value_reg_map.clear();
+        self.value_use_count.clear();
+        self.temp_regs = [false; 7];
+        self.saved_regs = [false; 12];
+        self.arg_regs = [false; 8];
+    }
+
+    pub fn reset_stack(&mut self) {
+        self.stack_slots.clear();
+        self.current_stack_offset = 0;
+    }
 
     pub fn new() -> Self {
         Self {
@@ -80,6 +92,20 @@ impl RiscvRegisterManager {
             }
         }
         // spill to stack
+        for reg in &["t0", "t1", "t2", "t3", "t4", "t5", "t6"] {
+            if let Some((val, _)) = self
+                .value_reg_map
+                .iter()
+                .find(|(_, r)| r == reg)
+                .and_then(|(v, r)| Some((*v, r.clone())))
+            {
+                // 溢出到栈
+                let offset = self.spill_to_stack(val);
+                self.stack_slots.insert(val, offset);
+                self.free_register(reg, val);
+                return Some(reg.to_string());
+            }
+        }
         None
     }
     pub(crate) fn allocate_saved(&mut self) -> Option<String> {
@@ -178,6 +204,17 @@ impl RiscvRegisterManager {
 
     pub fn generate_prologue(&self) -> Vec<String> {
         let mut prologue = Vec::new();
+        let stack_size = self.current_stack_offset;
+        let aligned_size = (stack_size + 15) / 16 * 16;
+        if aligned_size > 0 {
+            if aligned_size <= 2047 {
+                prologue.push(format!("  addi sp, sp, -{}", aligned_size));
+            } else {
+                prologue.push(format!("  li t0 , {}", aligned_size));
+                prologue.push("  sub sp, sp, t0".to_string());
+            }
+        }
+
         let mut to_save = Vec::new();
 
         for (i, &used) in self.saved_regs.iter().enumerate() {
@@ -196,6 +233,15 @@ impl RiscvRegisterManager {
 
     pub fn generate_epilogue(&self) -> Vec<String> {
         let mut epilogue = Vec::new();
+        let mut aligned_size = self.current_stack_offset;
+        if aligned_size > 0 {
+            if aligned_size <= 2047 {
+                epilogue.push(format!("  addi sp, sp, {}", aligned_size));
+            } else {
+                epilogue.push(format!("  li t0 , {}", aligned_size));
+                epilogue.push("  add sp, sp, t0".to_string());
+            }
+        }
         let mut to_restore = Vec::new();
 
         for (i, &used) in self.saved_regs.iter().enumerate() {

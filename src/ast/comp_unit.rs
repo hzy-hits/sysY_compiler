@@ -4,9 +4,7 @@ use super::refactor::{CompUnit, CompUnitItem};
 use super::Result;
 impl ToIr for CompUnit {
     fn to_ir(&self, builder: &mut IRBuilder) -> Result<()> {
-        self.items
-            .iter()
-            .for_each(|item| item.to_ir(builder).unwrap());
+        self.items.iter().try_for_each(|item| item.to_ir(builder))?;
         Ok(())
     }
 }

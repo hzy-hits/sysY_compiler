@@ -21,6 +21,7 @@ impl AsmGenerator {
         let func_name = func.name().strip_prefix("@").unwrap();
         writeln!(&mut self.output, ".global {}", func_name).unwrap(); // .global function
         writeln!(&mut self.output, "{}:", func_name).unwrap(); // function
+        self.init_function(func);
         for (bb, _) in func.layout().bbs() {
             for (inst, _) in func.layout().bbs().node(bb).unwrap().insts() {
                 self.generate_instruction(func, *inst);
@@ -46,6 +47,13 @@ impl AsmGenerator {
                         if let Some(val) = ret.value() {
                             self.increment_use_count(val);
                         }
+                    }
+                    ValueKind::Load(load) => {
+                        self.increment_use_count(load.src());
+                    }
+                    ValueKind::Store(store) => {
+                        self.increment_use_count(store.value());
+                        self.increment_use_count(store.dest());
                     }
 
                     _ => {}

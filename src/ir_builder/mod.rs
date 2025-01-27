@@ -55,4 +55,7 @@ impl IRBuilder {
     pub fn to_ir(&self, printer: &mut IRPrinter) -> String {
         printer.print_program(&self.program)
     }
+    pub fn contains_var(&self, name: &str) -> bool {
+        self.symbo_spaces.last().unwrap().contains_key(name)
+    }
 }

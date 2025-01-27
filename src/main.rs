@@ -35,6 +35,7 @@ fn main() -> Result<()> {
         "-koopa" => {
             let mut printer = ir_printer::IRPrinter::new();
             let ir = builder.to_ir(&mut printer);
+            // println!("{:#?}", ir);
             write(&output, ir)?;
         }
 

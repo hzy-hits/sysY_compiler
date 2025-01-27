@@ -12,7 +12,12 @@ impl ToIr for Stmt {
                 let val = exp.to_ir(builder)?;
                 builder.create_ret(Some(val));
             }
-            Stmt::Assign(_, _) => unimplemented!(),
+            Stmt::Assign(lval, exp) => {
+                let addr = lval.get_address(builder)?;
+                let val = exp.to_ir(builder)?;
+
+                builder.create_store(addr, val)?;
+            }
         }
 
         Ok(())

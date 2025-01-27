@@ -94,12 +94,28 @@ impl IRPrinter {
                     koopa::ir::BinaryOp::Le => "le",
                     koopa::ir::BinaryOp::Ge => "ge",
                     koopa::ir::BinaryOp::NotEq => "ne",
-                    
-                    
+
                     _ => unreachable!(),
                 };
                 let value = self.value_to_string(func, value);
                 writeln!(&mut self.output, "{} = {} {}, {}", value, op, lhs, rhs).unwrap();
+            }
+            ValueKind::Alloc(_) => {
+                // Handle alloc instruction
+                let value = self.value_to_string(func, value);
+                writeln!(&mut self.output, "{} = alloc i32", value).unwrap();
+            }
+            ValueKind::Load(load) => {
+                // Handle load instruction
+                let value = self.value_to_string(func, value);
+                let src = self.value_to_string(func, load.src());
+                writeln!(&mut self.output, "{} = load {}", value, src).unwrap();
+            }
+            ValueKind::Store(store) => {
+                // Handle store instruction
+                let value = self.value_to_string(func, store.value());
+                let dest = self.value_to_string(func, store.dest());
+                writeln!(&mut self.output, "store {}, {}", value, dest).unwrap();
             }
             _ => writeln!(&mut self.output, "{:?}", data.kind()).unwrap(),
         }
@@ -109,6 +125,24 @@ impl IRPrinter {
         let data = func.dfg().value(value);
         match data.kind() {
             ValueKind::Integer(int) => int.value().to_string(),
+            ValueKind::Alloc(_) => {
+                if let Some(name) = data.name() {
+                    if name.starts_with('@') {
+                        name.to_string()
+                    } else {
+                        format!("@{}", name)
+                    }
+                } else {
+                    unreachable!("Alloc value without name")
+                }
+            }
+            ValueKind::Binary(_) | ValueKind::Load(_) | ValueKind::Store(_) => {
+                if let Some(name) = data.name() {
+                    name.to_string()
+                } else {
+                    unreachable!("Value without name")
+                }
+            }
             _ => {
                 let name = data.name().as_ref().unwrap();
                 format!("{}", name)
