@@ -79,13 +79,13 @@ impl IRBuilder {
 
 impl SymbolTable for IRBuilder {
     fn enter_scope(&mut self) -> Result<()> {
-        self.symbo_spaces.push(HashMap::new());
+        self.symbol_spaces.push(HashMap::new());
         self.current_scope_level += 1;
         Ok(())
     }
 
     fn exit_scope(&mut self) -> Result<()> {
-        self.symbo_spaces
+        self.symbol_spaces
             .pop()
             .ok_or_else(|| anyhow::anyhow!("No scope to exit"))?;
         self.current_scope_level -= 1;
@@ -94,7 +94,7 @@ impl SymbolTable for IRBuilder {
     }
 
     fn lookup(&self, name: &str) -> Result<&SymbolKind> {
-        for scope in self.symbo_spaces.iter().rev() {
+        for scope in self.symbol_spaces.iter().rev() {
             if let Some(sym) = scope.get(name) {
                 return Ok(sym);
             }
@@ -103,7 +103,7 @@ impl SymbolTable for IRBuilder {
     }
 
     fn add_symbol(&mut self, name: &str, kind: SymbolKind) -> Result<()> {
-        let scope = self.symbo_spaces.last_mut().ok_or_else(|| {
+        let scope = self.symbol_spaces.last_mut().ok_or_else(|| {
             anyhow::anyhow!(
                 "
 No active scope"

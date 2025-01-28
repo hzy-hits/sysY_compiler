@@ -40,11 +40,17 @@ impl ToIr for ConstDef {
             .value
             .eval_const(builder)
             .with_context(|| format!("Invalid const initializer for {}", self.id))?;
-        if builder.lookup(&self.id).is_ok() {
+        if builder.contains_var_in_current_scope(&self.id) {
             return Err(anyhow::anyhow!("Duplicate const definition: {}", self.id));
         }
         builder
-            .add_symbol(&self.id, SymbolKind::Const(val))
+            .add_symbol(
+                &self.id,
+                SymbolKind::Const {
+                    value: val,
+                    scope_level: builder.current_scope_level(),
+                },
+            )
             .with_context(|| format!("Failed to add const symbol {}", self.id))
     }
 }
@@ -54,19 +60,25 @@ impl ToIr for VarDef {
         let ty = match self.ty {
             BType::Int => Type::get_i32(),
         };
-        if builder.lookup(&self.id).is_ok() {
+        if builder.contains_var_in_current_scope(&self.id) {
             return Err(anyhow::anyhow!(
                 "Duplicate variable definition: {}",
                 self.id
             ));
         }
-        let var_name = format!("@{}", self.id);
+        let scoped_name = format!("@{}_{}", self.id, builder.current_scope_level());
 
         let alloc = builder
-            .create_alloc(ty.clone(), var_name)
+            .create_alloc(ty.clone(), scoped_name)
             .with_context(|| format!("Failed to create alloc for {}", self.id))?;
         builder
-            .add_symbol(&self.id, SymbolKind::Variable(alloc))
+            .add_symbol(
+                &self.id,
+                SymbolKind::Variable {
+                    value: alloc,
+                    scope_level: builder.current_scope_level(),
+                },
+            )
             .with_context(|| format!("Failed to add var symbol {}", self.id))?;
 
         if let Some(init) = &self.init_val {

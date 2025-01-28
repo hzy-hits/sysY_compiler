@@ -20,8 +20,15 @@ impl LVal {
             .lookup(&self.id)
             .with_context(|| format!("Undefined identifier: {}", self.id))?;
         match sym {
-            SymbolKind::Variable(alloc) => Ok(*alloc),
-            SymbolKind::Const(_) => Err(anyhow::anyhow!("Cannot assign to a constant {}", self.id)),
+            SymbolKind::Variable {
+                value: alloc,
+                scope_level: _,
+            } => Ok(*alloc),
+
+            SymbolKind::Const {
+                value: _,
+                scope_level: _,
+            } => Err(anyhow::anyhow!("Cannot assign to a constant {}", self.id)),
             _ => Err(anyhow::anyhow!("Not a variable")),
         }
     }
@@ -29,8 +36,14 @@ impl LVal {
     pub fn load_value(&self, builder: &mut IRBuilder) -> Result<Value> {
         let sym = builder.lookup(&self.id)?;
         match sym {
-            SymbolKind::Variable(alloc) => builder.create_load(*alloc),
-            SymbolKind::Const(val) => Ok(builder.create_constant(*val)),
+            SymbolKind::Variable {
+                value: alloc,
+                scope_level: _,
+            } => builder.create_load(*alloc),
+            SymbolKind::Const {
+                value: val,
+                scope_level: _,
+            } => Ok(builder.create_constant(*val)),
             _ => Err(anyhow::anyhow!("Not a variable")),
         }
     }
@@ -94,7 +107,10 @@ impl ConstEval for LVal {
     fn eval_const(&self, builder: &IRBuilder) -> Result<i32> {
         let sym = builder.lookup(&self.id)?;
         match sym {
-            SymbolKind::Const(num) => Ok(*num),
+            SymbolKind::Const {
+                value: num,
+                scope_level: _,
+            } => Ok(*num),
             _ => Err(anyhow::anyhow!("Not a constant")),
         }
     }

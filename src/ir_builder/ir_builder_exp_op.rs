@@ -26,7 +26,6 @@ impl IRBuilder {
         if let Some(val_data) = dfg.values().get(&value) {
             if val_data.name().is_none() && needs_id(val_data.kind()) {
                 let id = self.next_value_id();
-                println!("DEBUG: Assigning ID {} to value", id);
                 self.program
                     .func_mut(func)
                     .dfg_mut()

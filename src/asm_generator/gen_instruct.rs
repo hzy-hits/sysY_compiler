@@ -84,8 +84,6 @@ impl AsmGenerator {
             }
 
             ValueKind::Alloc(_) => {
-                println!("Generating code for Alloc value: {:?}", val);
-                println!("Current stack slots: {:?}", self.reg_manager.stack_slots);
                 let offset =
                     self.reg_manager.stack_slots.get(&val).copied().expect(
                         "Alloc value must have a stack slot assigned during initialization",
@@ -223,7 +221,6 @@ impl AsmGenerator {
                 let data = func.dfg().value(*inst);
                 match data.kind() {
                     ValueKind::Alloc(_) => {
-                        println!("Allocating stack for Alloc: {:?}", inst);
                         self.reg_manager.stack_slots.insert(*inst, stack_size);
                         stack_size += 4;
                     }
@@ -235,10 +232,6 @@ impl AsmGenerator {
 
         let aligned_size = (stack_size + 15) / 16 * 16;
         self.reg_manager.current_stack_offset = aligned_size;
-        println!(
-            "Stack slots after initialization: {:?}",
-            self.reg_manager.stack_slots
-        );
 
         self.reg_manager.reset_registers();
 

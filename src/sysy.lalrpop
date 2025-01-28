@@ -120,10 +120,14 @@ pub BType: BType ={
 }
 
 pub Stmt: Stmt = {
-    "return" <exp: Exp> ";" => Stmt::Return(exp),
-    "return" <exp: Exp> => Stmt::Return(exp),  
+    
+
+    <exp:Exp?> ";" => Stmt::Exp(exp), 
+    <block:Block> => Stmt::Block(block),
+
+    "return" <exp: Exp?> ";" => Stmt::Return(exp),
+
     <lval:LVal> "=" <exp: Exp> ";" => Stmt::Assign(lval, exp),
-    <lval:LVal> "=" <exp: Exp> => Stmt::Assign(lval, exp),  
 };
 
 pub LVal: LVal ={

@@ -1,6 +1,6 @@
+mod def_decl;
 mod ir_builder_exp_op;
 mod ir_builder_impl;
-
 use koopa::ir::*;
 use std::collections::HashMap;
 
@@ -11,7 +11,7 @@ pub struct IRBuilder {
     current_func: Option<Function>,
     current_block: Option<BasicBlock>,
     value_counter: usize,
-    symbo_spaces: Vec<HashMap<String, SymbolKind>>,
+    symbol_spaces: Vec<HashMap<String, SymbolKind>>,
     current_scope_level: usize,
 }
 // IRBuilder getter and new methods
@@ -22,7 +22,7 @@ impl IRBuilder {
             current_func: None,
             current_block: None,
             value_counter: 0,
-            symbo_spaces: vec![HashMap::new()],
+            symbol_spaces: vec![HashMap::new()],
             current_scope_level: 0,
         }
     }
@@ -56,6 +56,6 @@ impl IRBuilder {
         printer.print_program(&self.program)
     }
     pub fn contains_var(&self, name: &str) -> bool {
-        self.symbo_spaces.last().unwrap().contains_key(name)
+        self.symbol_spaces.last().unwrap().contains_key(name)
     }
 }
